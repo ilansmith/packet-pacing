@@ -3,4 +3,5 @@
 
 #define NUM_LOOPS (100000000L)
 
+#define PACKETS_PER_BURST (800)
 

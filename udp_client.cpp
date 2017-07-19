@@ -109,12 +109,14 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < NUM_LOOPS; ++i) {
 		int j;
 
-		for (j = 0; j < 763; j++) {
+		for (j = 0; j < PACKETS_PER_BURST; j++) {
 			if (bytes = sendto(sockfd, buffer, CHUNK_SIZE, 0, sa, salen) < 0) {
 				/* buffers aren't available locally at the moment,
 				 * try again.
 				 */
 				if (errno == ENOBUFS)
+					printf("sendto error ENOBYFS");
+					fflush(stdout);
 					continue;
 				perror("error sending datagram");
 				exit(1);
