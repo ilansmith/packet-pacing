@@ -1,4 +1,4 @@
-CFLAGS=-Wall -Werror -Wextra -std=c++11
+CFLAGS=-std=c++11
 LFLAGS=-lstdc++
 APP=udp_client
 

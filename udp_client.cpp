@@ -72,20 +72,16 @@ Exit:
 
 int main(int argc, char *argv[])
 {
-	int sockfd, n, rc;
-	socklen_t salen, salen_local;
-	struct sockaddr *sa, *sa_local;
-	struct sockaddr_in sa_in;
-	socklen_t sin_len;
+	int sockfd, n, rc, i;
+	socklen_t salen;
+	struct sockaddr *sa;
 	char *host, *port;
-	int i;
-	int fromlen;
-	int ackvar;
-	int nonacks, acks;
-	char* buffer = new char[CHUNK_SIZE];
+	char *buffer;
 
-	nonacks = 0;
-	acks = 0;
+	if (!(buffer = (char*)malloc(CHUNK_SIZE))) {
+		printf("Could not allocate data buffer\n");
+		return -1;
+	}
 
 	if (argc < 3 || argc > 4) {
 		printf("usage: %s <hostname/IPaddress> <portnumber> [rate] \n",
@@ -98,47 +94,38 @@ int main(int argc, char *argv[])
 
 	my_getaddrinfo(host, port, &sockfd, &sa, &salen);
 
-	if (argc > 3) {
+	if (argc == 4) {
 		uint64_t rate = atol(argv[3]);
 
-		int val1 = setsockopt(sockfd, SOL_SOCKET, SO_MAX_PACING_RATE, &rate,
-				sizeof(rate));
+		if (setsockopt(sockfd, SOL_SOCKET, SO_MAX_PACING_RATE, &rate,
+				sizeof(rate))) {
+			printf("setsockopt() failed \n");
+		}
 		printf("settings rate to %ul\n", rate);
-	}
-
-	int rate_packets = 0;
-	int required_rate = 0;
-	if (argc > 5) {
-		rate_packets = atol(argv[4]);
-		required_rate = atol(argv[5]);
 	}
 
 	uint64_t total_bytes = 0L;
 	int bytes;
-	int count_packets_rate = 0;
-	for (int ii = 0; ii < NUM_LOOPS; ++ii) {
-		if (bytes = sendto(sockfd, buffer, CHUNK_SIZE, 0, sa, salen) < 0) {
-			/* buffers aren't available locally at the moment,
-			 * try again.
-			 */
-			if (errno != ENOBUFS) {
+	for (int i = 0; i < NUM_LOOPS; ++i) {
+		int j;
+
+		for (j = 0; j < 763; j++) {
+			if (bytes = sendto(sockfd, buffer, CHUNK_SIZE, 0, sa, salen) < 0) {
+				/* buffers aren't available locally at the moment,
+				 * try again.
+				 */
+				if (errno == ENOBUFS)
+					continue;
 				perror("error sending datagram");
 				exit(1);
 			}
-			continue;
+			total_bytes += CHUNK_SIZE;
 		}
-		count_packets_rate += 1;
-		if (count_packets_rate % rate_packets == 0) {
-			for (int j = 0; j < required_rate - rate_packets; ++j) {
-				bytes = sendto(sockfd, buffer, CHUNK_SIZE, DUMMY_SEND_FLAG,
-						sa, salen);
-			}
-		}
-		total_bytes += CHUNK_SIZE;
+		usleep(200000);
 	}
 	printf("\n %lu bytes sent \n", total_bytes);
 	free(sa);
+	free(buffer);
 	close(sockfd);
 	return 0;
-
 }
