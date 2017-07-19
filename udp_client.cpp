@@ -9,6 +9,7 @@
 #include <netdb.h> 
 #include <iostream>
 #include <errno.h>
+#include <math.h>
 
 #include "buff_size.h"
 
@@ -72,9 +73,9 @@ Exit:
 
 int main(int argc, char *argv[])
 {
-	int sockfd, n, rc, i;
-	socklen_t salen;
-	struct sockaddr *sa;
+	int sockfd, n, rc;
+	socklen_t salen, salen_local;
+	struct sockaddr *sa, *sa_local;
 	char *host, *port;
 	char *buffer;
 
@@ -93,6 +94,8 @@ int main(int argc, char *argv[])
 	port = argv[2];
 
 	my_getaddrinfo(host, port, &sockfd, &sa, &salen);
+        my_getaddrinfo("5.5.0.1", "0", &sockfd, &sa_local, &salen_local);
+
 
 	if (argc == 4) {
 		uint64_t rate = atol(argv[3]);
@@ -105,21 +108,38 @@ int main(int argc, char *argv[])
 	}
 
 	uint64_t total_bytes = 0L;
-	int bytes;
+	float dummy_ratio = (800.006696 - 672) / 800.006696;
+	int dummies_sent = 0;
+	int next_dummies = 0;
 	for (int i = 0; i < NUM_LOOPS; ++i) {
-		int j;
-
-		for (j = 0; j < PACKETS_PER_BURST; j++) {
-			if (bytes = sendto(sockfd, buffer, CHUNK_SIZE, 0, sa, salen) < 0) {
+		for (int j = 0; j < 672; ++j) {
+			if (sendto(sockfd, buffer, CHUNK_SIZE, 0, sa, salen) < 0) {
 				/* buffers aren't available locally at the moment,
 				 * try again.
 				 */
-				if (errno == ENOBUFS)
+				if (errno == ENOBUFS) {
 					printf("sendto error ENOBYFS");
 					fflush(stdout);
 					continue;
+				}
 				perror("error sending datagram");
 				exit(1);
+			}
+			if (!(j % (PACKETS_PER_BURST/10))) {
+				next_dummies = floor((i * 800.006696 + j) * dummy_ratio - dummies_sent);
+				for (int k = 0; k <= next_dummies; ++k) {
+					if (sendto(sockfd, buffer, CHUNK_SIZE, 0, sa_local, salen_local) < 0) {
+                                		/* buffers aren't available locally at the moment*/
+                                		if (errno == ENOBUFS){
+                                       			printf("sendto error ENOBYFS");
+							fflush(stdout);
+                                        		continue;
+						}
+                                		perror("error sending dummy datagram");
+                                		exit(1);
+					}
+				}
+				dummies_sent += next_dummies;
 			}
 			total_bytes += CHUNK_SIZE;
 		}
@@ -127,6 +147,7 @@ int main(int argc, char *argv[])
 	}
 	printf("\n %lu bytes sent \n", total_bytes);
 	free(sa);
+	free(sa_local);
 	free(buffer);
 	close(sockfd);
 	return 0;
