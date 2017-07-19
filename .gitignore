@@ -1,0 +1,8 @@
+*.o
+
+tags
+
+udp_client
+udp_server
+tcp_client
+tcp_server
