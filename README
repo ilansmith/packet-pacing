@@ -1,0 +1,17 @@
+how to compile
+
+g++ -std=c++11 client.cpp
+
+how to run
+
+run server:
+./server
+
+run client
+
+./client r-arch-host03 9999 1000
+
+------
+
+when running on kernel, be sure to enable packet pacing with tc utility (traffic control)
+

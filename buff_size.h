@@ -1,0 +1,6 @@
+
+#define CHUNK_SIZE (1400)
+
+#define NUM_LOOPS (100000000L)
+
+
