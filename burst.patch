@@ -1,0 +1,37 @@
+diff --git a/include/infiniband/kern-abi_exp.h b/include/infiniband/kern-abi_exp.h
+index ca5090f..150140c 100644
+--- a/include/infiniband/kern-abi_exp.h
++++ b/include/infiniband/kern-abi_exp.h
+@@ -488,7 +488,7 @@ struct ibv_exp_modify_qp {
+ 	__u32 exp_attr_mask;
+ 	__u32 flow_entropy;
+ 	__u32 rate_limit;
+-	__u32 reserved1;
++	__u32 burst_size;
+ 	__u64 driver_data[0];
+ };
+ 
+diff --git a/include/infiniband/verbs_exp.h b/include/infiniband/verbs_exp.h
+index c1f1509..a578b74 100644
+--- a/include/infiniband/verbs_exp.h
++++ b/include/infiniband/verbs_exp.h
+@@ -877,6 +877,7 @@ struct ibv_exp_qp_attr {
+ 	uint32_t		comp_mask; /* reserved for future growth (must be 0) */
+ 	uint32_t		flow_entropy;
+ 	uint32_t		rate_limit;
++	uint32_t		burst_size;
+ };
+ 
+ /*
+diff --git a/src/cmd_exp.c b/src/cmd_exp.c
+index f0b3842..3468bc6 100644
+--- a/src/cmd_exp.c
++++ b/src/cmd_exp.c
+@@ -712,6 +712,7 @@ int ibv_exp_cmd_modify_qp(struct ibv_qp *qp, struct ibv_exp_qp_attr *attr,
+ 	if (attr->comp_mask & IBV_EXP_QP_ATTR_FLOW_ENTROPY)
+ 		cmd->flow_entropy	 = attr->flow_entropy;
+ 	cmd->rate_limit		    = attr->rate_limit;
++	cmd->burst_size		    = attr->burst_size;
+ 	cmd->reserved[0]	    = 0;
+ 	cmd->reserved[1]	    = 0;
+ 	cmd->comp_mask		    = attr->comp_mask;
