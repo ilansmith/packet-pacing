@@ -24,10 +24,13 @@ def ts_from_line(line, exp):
     """
     start = line.find(exp)+len(exp)
     end = line.find(' ', start)
-    if (end < 0):
-        sec, nanosec = line[start:].replace('\n','').split('.')#.replace('.','')
-    else:
-        sec, nanosec = line[start:end].replace('\n','').split('.')#.replace('.','')
+    try:
+        if (end < 0):
+            sec, nanosec = line[start:].replace('\n','').split('.')#.replace('.','')
+        else:
+            sec, nanosec = line[start:end].replace('\n','').split('.')#.replace('.','')
+    except:
+        return 0, 0
     
     return sec, nanosec
 
@@ -61,10 +64,6 @@ def main(in_name, out_name):
 if __name__ == "__main__":
     EPILOG = """
 Use to verify timestamping's output.
-Result is a csv file with the hardware and software RX timestamps, and the 
-differences between a HW timestamp with its previous, the same difference
-diregarding the interval between message, and the difference between the HW
-and SW timestamp.
 
 Inputs:
     --in - file name of timestamping test output
