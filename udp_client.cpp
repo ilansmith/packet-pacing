@@ -17,18 +17,21 @@
 #define LOCAL_IP ("4.4.0.1")
 #define OUT_PORT_LOCAL ("20654")
 
-#define USEC_RESOLUTION (200000) /* in nanosec */
+#define USEC_RESOLUTION (200000) /* in usec */
 
-#define MTU_PACKETS 1
+#define USE_MTU_PACKETS (0)
+#define USE_DUMMY (0)
 
 /* Headers: 42 bytes */
-#if MTU_PACKETS
-#define USER_PACKET_PER_BURST (641)
-#define TOTAL_PACKET_PER_BURST (762.945838838)/*(800.006695905)*/
+#if USE_MTU_PACKETS
+#define MAX_PACING_RATE (5775500)
+#define EXACT_USER_PACKET_PER_BURST (640.863612781)
+#define TOTAL_PACKET_PER_BURST (800.006695905)
 #define CHUNK_SIZE (1472) /*1514-42*/
 #else
-#define USER_PACKET_PER_BURST (716)
-#define TOTAL_PACKET_PER_BURST (762.942477876)/*(800.003171681)*/
+#define MAX_PACING_RATE (5172750)
+#define EXACT_USER_PACKET_PER_BURST (715.536511615)
+#define TOTAL_PACKET_PER_BURST (800.003171681)
 #define CHUNK_SIZE (1314) /*1356-42*/
 #endif
 
@@ -98,7 +101,7 @@ static int run(int sockfd, struct sockaddr *sa, struct sockaddr *sa_local, sockl
 	char *buffer;
 	uint64_t total_bytes = 0L;
 	int ret = -1;
-	float dummy_ratio = (TOTAL_PACKET_PER_BURST - USER_PACKET_PER_BURST) / TOTAL_PACKET_PER_BURST;
+	float dummy_ratio = (TOTAL_PACKET_PER_BURST - EXACT_USER_PACKET_PER_BURST) / TOTAL_PACKET_PER_BURST;
 	float counter_next_dummy = 0;
 	int dummies_sent = 0;
 	int next_dummies = 0;
@@ -112,7 +115,10 @@ static int run(int sockfd, struct sockaddr *sa, struct sockaddr *sa_local, sockl
 	}
 
 	for (int i = 0; i < NUM_LOOPS; ++i) {
-		for (int j = 0; j < USER_PACKET_PER_BURST; ++j) {
+		float next_stop_send = (i+1) * EXACT_USER_PACKET_PER_BURST;
+		for (uint32_t j = floor(i * EXACT_USER_PACKET_PER_BURST);
+				j < next_stop_send;
+				++j) {
 			if (sendto(sockfd, buffer, CHUNK_SIZE, 0, sa, salen) < 0) {
 				/* buffers aren't available locally at the moment */
 				if (errno == ENOBUFS) {
@@ -126,9 +132,9 @@ static int run(int sockfd, struct sockaddr *sa, struct sockaddr *sa_local, sockl
 			}
 
 			counter_next_dummy += dummy_ratio;
-			if (dummy_ratio > 1.0) {
+			if (USE_DUMMY && dummy_ratio > 1.0) {
 				counter_next_dummy -= 1.0;
-				if (sendto(sockfd, buffer, CHUNK_SIZE, DUMMY_SEND_FLAG, sa_local, salen_local) < 0) {
+				if (sendto(sockfd, buffer, CHUNK_SIZE, 0, sa, salen/*sa_local, salen_local*/) < 0) {
 					// buffers aren't available locally at the moment
 					if (errno == ENOBUFS){
 						printf("sendto error ENOBYFS");
@@ -161,6 +167,8 @@ int main(int argc, char *argv[]) {
 	socklen_t salen, salen_local;
 	struct sockaddr *sa = NULL, *sa_local = NULL;
 	char *host, *port;
+	uint64_t rate = MAX_PACING_RATE;
+
 	int ret = -1;
 
 	if (argc < 3 || argc > 4) {
@@ -171,19 +179,18 @@ int main(int argc, char *argv[]) {
 	host = argv[1];
 	port = argv[2];
 
-	if (my_getaddrinfo(host, port, &sockfd, &sa, &salen))
+	if (my_getaddrinfo(host, port, &sockfd, &sa, &salen)){
 		goto Exit;
-	if (my_getaddrinfo(LOCAL_IP, OUT_PORT_LOCAL, NULL, &sa_local, &salen_local))
+	}
+	if (my_getaddrinfo(LOCAL_IP, OUT_PORT_LOCAL, NULL, &sa_local, &salen_local)) {
 		goto Exit;
+	}
 
-	if (argc == 4) {
-		uint64_t rate = atol(argv[3]);
 
-		printf("settings rate to: %lu\n", rate);
-		if (setsockopt(sockfd, SOL_SOCKET, SO_MAX_PACING_RATE, &rate, sizeof(rate))) {
-			printf("setsockopt() failed \n");
-			goto Exit;
-		}
+	printf("settings rate to: %lu\n", rate);
+	if (setsockopt(sockfd, SOL_SOCKET, SO_MAX_PACING_RATE, &rate, sizeof(rate))) {
+		printf("setsockopt() failed \n");
+		goto Exit;
 	}
 
 	if (run(sockfd, sa, sa_local, salen, salen_local) < 0) {

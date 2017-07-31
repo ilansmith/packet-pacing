@@ -7,15 +7,15 @@ CFLAGS+=-g
 endif
 
 %.o: %.cpp
-	g++ $(CFLAGS) -c $<
+	g++ -g $(CFLAGS) -c $<
 
 all:$(APPS)
 
 udp_client: udp_client.o
-	g++ -o $@ $^ $(LFLAGS)
+	g++ -g -o $@ $^ $(LFLAGS)
 
 udp_server: udp_server.o
-	g++ -o $@ $^ $(LFLAGS)
+	g++ -g -o $@ $^ $(LFLAGS)
 
 clean:
 	rm -rf *.o
