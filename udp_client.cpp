@@ -23,16 +23,18 @@
 #define USE_DUMMY (0)
 
 /* Headers: 42 bytes */
-#if USE_MTU_PACKETS
+#if USE_MTU_PACKETS == 0
+#define MAX_PACING_RATE (5172750/2)
+#define EXACT_USER_PACKET_PER_BURST (715.536511615)
+#define TOTAL_PACKET_PER_BURST (800.003171681)
+#define CHUNK_SIZE (1314) /*1356-42*/
+#else
+#if USE_MTU_PACKETS == 1
 #define MAX_PACING_RATE (5775500)
 #define EXACT_USER_PACKET_PER_BURST (640.863612781)
 #define TOTAL_PACKET_PER_BURST (800.006695905)
 #define CHUNK_SIZE (1472) /*1514-42*/
-#else
-#define MAX_PACING_RATE (5172750)
-#define EXACT_USER_PACKET_PER_BURST (715.536511615)
-#define TOTAL_PACKET_PER_BURST (800.003171681)
-#define CHUNK_SIZE (1314) /*1356-42*/
+#endif
 #endif
 
 #define NUM_LOOPS (100000000L)
@@ -134,7 +136,7 @@ static int run(int sockfd, struct sockaddr *sa, struct sockaddr *sa_local, sockl
 			counter_next_dummy += dummy_ratio;
 			if (USE_DUMMY && dummy_ratio > 1.0) {
 				counter_next_dummy -= 1.0;
-				if (sendto(sockfd, buffer, CHUNK_SIZE, 0, sa, salen/*sa_local, salen_local*/) < 0) {
+				if (sendto(sockfd, buffer, CHUNK_SIZE, DUMMY_SPOOF_MAC, sa, salen/*sa_local, salen_local*/) < 0) {
 					// buffers aren't available locally at the moment
 					if (errno == ENOBUFS){
 						printf("sendto error ENOBYFS");
