@@ -25,14 +25,14 @@
 /* Headers: 42 bytes */
 #if USE_MTU_PACKETS == 0
 #define MAX_PACING_RATE (5172750/2)
-#define EXACT_USER_PACKET_PER_BURST (715.523598820059)
-#define TOTAL_PACKET_PER_BURST /*(757.769841648)*//*(800.003171681)*/(762.9424778761062)
+#define EXACT_USER_PACKET_PER_BURST (715.5365116150442)
+#define TOTAL_PACKET_PER_BURST /*(762.9424778761062)*/(765.5424778761062)
 #define CHUNK_SIZE (1314) /*1356-42*/
 #else
 #if USE_MTU_PACKETS == 1
-#define MAX_PACING_RATE (5775500)
+#define MAX_PACING_RATE (5775500/2)
 #define EXACT_USER_PACKET_PER_BURST (640.863612781)
-#define TOTAL_PACKET_PER_BURST (800.006695905)
+#define TOTAL_PACKET_PER_BURST (762.9424778761062)
 #define CHUNK_SIZE (1472) /*1514-42*/
 #endif
 #endif
@@ -98,7 +98,7 @@ Exit:
 	return ret;
 }
 
-static int run(int sockfd, struct sockaddr *sa, struct sockaddr *sa_local, socklen_t salen, socklen_t salen_local)
+static int run(int sockfd, struct sockaddr *sa, socklen_t salen)
 {
 	char *buffer;
 	uint64_t total_bytes = 0L;
@@ -136,7 +136,7 @@ static int run(int sockfd, struct sockaddr *sa, struct sockaddr *sa_local, sockl
 			counter_next_dummy += dummy_ratio;
 			if (USE_DUMMY && counter_next_dummy > 1.0) {
 				counter_next_dummy -= 1.0;
-				if (sendto(sockfd, buffer, CHUNK_SIZE, DUMMY_SPOOF_MAC, sa, salen/*sa_local, salen_local*/) < 0) {
+				if (sendto(sockfd, buffer, CHUNK_SIZE, DUMMY_SPOOF_MAC, sa, salen) < 0) {
 					// buffers aren't available locally at the moment
 					if (errno == ENOBUFS){
 						printf("sendto error ENOBYFS");
@@ -167,7 +167,7 @@ Exit:
 int main(int argc, char *argv[]) {
 	int sockfd = -1, rc;
 	socklen_t salen, salen_local;
-	struct sockaddr *sa = NULL, *sa_local = NULL;
+	struct sockaddr *sa = NULL;
 	char *host, *port;
 	uint64_t rate = MAX_PACING_RATE;
 
@@ -184,9 +184,6 @@ int main(int argc, char *argv[]) {
 	if (my_getaddrinfo(host, port, &sockfd, &sa, &salen)){
 		goto Exit;
 	}
-	if (my_getaddrinfo(LOCAL_IP, OUT_PORT_LOCAL, NULL, &sa_local, &salen_local)) {
-		goto Exit;
-	}
 
 
 	printf("settings rate to: %lu\n", rate);
@@ -195,7 +192,7 @@ int main(int argc, char *argv[]) {
 		goto Exit;
 	}
 
-	if (run(sockfd, sa, sa_local, salen, salen_local) < 0) {
+	if (run(sockfd, sa, salen) < 0) {
 		printf("program exit on error.\n");
 		goto Exit;
 	}
@@ -204,7 +201,6 @@ int main(int argc, char *argv[]) {
 
 Exit:
 	free(sa);
-	free(sa_local);
 	if (-1 < sockfd)
 		close(sockfd);
 	return ret;
