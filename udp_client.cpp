@@ -25,8 +25,8 @@
 /* Headers: 42 bytes */
 #if USE_MTU_PACKETS == 0
 #define MAX_PACING_RATE (5172750/2)
-#define EXACT_USER_PACKET_PER_BURST (715.536511615)
-#define TOTAL_PACKET_PER_BURST (757.769841648)/*(800.003171681)*/
+#define EXACT_USER_PACKET_PER_BURST (715.523598820059)
+#define TOTAL_PACKET_PER_BURST /*(757.769841648)*//*(800.003171681)*/(762.9424778761062)
 #define CHUNK_SIZE (1314) /*1356-42*/
 #else
 #if USE_MTU_PACKETS == 1
@@ -136,7 +136,7 @@ static int run(int sockfd, struct sockaddr *sa, struct sockaddr *sa_local, sockl
 			counter_next_dummy += dummy_ratio;
 			if (USE_DUMMY && counter_next_dummy > 1.0) {
 				counter_next_dummy -= 1.0;
-				if (sendto(sockfd, buffer, CHUNK_SIZE, 0/*DUMMY_SPOOF_MAC*/, sa, salen/*sa_local, salen_local*/) < 0) {
+				if (sendto(sockfd, buffer, CHUNK_SIZE, DUMMY_SPOOF_MAC, sa, salen/*sa_local, salen_local*/) < 0) {
 					// buffers aren't available locally at the moment
 					if (errno == ENOBUFS){
 						printf("sendto error ENOBYFS");
