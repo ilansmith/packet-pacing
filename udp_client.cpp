@@ -26,7 +26,7 @@
 #if USE_MTU_PACKETS == 0
 #define MAX_PACING_RATE (5172750/ /*burst size 2*/2)
 #define EXACT_USER_PACKET_PER_BURST (715.5365116150442)
-#define TOTAL_PACKET_PER_BURST /*(762.9424778761062)*/(765.5424778761062)
+#define TOTAL_PACKET_PER_BURST (762.9424778761062)
 #define CHUNK_SIZE (1314) /*1356-42*/
 #else
 #if USE_MTU_PACKETS == 1
@@ -103,7 +103,8 @@ static int run(int sockfd, struct sockaddr *sa, socklen_t salen)
 	char *buffer;
 	uint64_t total_bytes = 0L;
 	int ret = -1;
-	float dummy_ratio = (TOTAL_PACKET_PER_BURST - EXACT_USER_PACKET_PER_BURST) / TOTAL_PACKET_PER_BURST;
+	float dummy_ratio = (TOTAL_PACKET_PER_BURST - EXACT_USER_PACKET_PER_BURST) /
+			EXACT_USER_PACKET_PER_BURST;
 	float counter_next_dummy = 0;
 	int dummies_sent = 0;
 	int next_dummies = 0;
