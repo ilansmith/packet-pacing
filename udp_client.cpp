@@ -24,7 +24,7 @@
 
 /* Headers: 42 bytes */
 #if USE_MTU_PACKETS == 0
-#define MAX_PACING_RATE (5172750/2)
+#define MAX_PACING_RATE (5172750/ /*burst size 2*/2)
 #define EXACT_USER_PACKET_PER_BURST (715.5365116150442)
 #define TOTAL_PACKET_PER_BURST /*(762.9424778761062)*/(765.5424778761062)
 #define CHUNK_SIZE (1314) /*1356-42*/
@@ -111,9 +111,15 @@ static int run(int sockfd, struct sockaddr *sa, socklen_t salen)
 	std::chrono::time_point<std::chrono::high_resolution_clock> end;
 	std::chrono::microseconds resolution(USEC_RESOLUTION);
 
+	/*malloc buffer and set with '0-9'-s*/
 	if (!(buffer = (char*)malloc(CHUNK_SIZE))) {
 		printf("Could not allocate data buffer\n");
 		return -1;
+	}
+
+	int pos_0 = (int) '0';
+	for (int i = 0; i < CHUNK_SIZE; ++i) {
+		buffer[i] = (char) (i % 10 /*0-9*/ + pos_0);
 	}
 
 	for (int i = 0; i < NUM_LOOPS; ++i) {
