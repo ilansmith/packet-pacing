@@ -1,21 +1,21 @@
-CFLAGS=-std=c++0x
-LFLAGS=-lstdc++
-APPS=udp_client udp_server
+CFLAGS=-std=c++0x -fPIC
+LFLAGS=-lstdc++ -fPIC
+APPS=libpacing.so udp_client
 
 ifeq ($(DEBUG),y)
 CFLAGS+=-g
 endif
 
 %.o: %.cpp
-	g++ -g $(CFLAGS) -c $<
+	g++ $(CFLAGS) -c $<
 
 all:$(APPS)
 
-udp_client: udp_client.o
-	g++ -g -o $@ $^ $(LFLAGS)
+udp_client: udp_client.o libpacing.so 
+	g++ $(LFLAGS) -L. -lpacing  -o $@ $<
 
-udp_server: udp_server.o
-	g++ -g -o $@ $^ $(LFLAGS)
+libpacing.so: pacing.o
+	g++ -shared -o $@ $< -lm	
 
 clean:
 	rm -rf *.o
