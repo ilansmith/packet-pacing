@@ -1,5 +1,6 @@
-#ifndef PACING_H
-#define PACING_H
+#ifndef _PACING_H_
+#define _PACING_H_
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -18,28 +19,28 @@
 #define PACKETS_PER_FRAME(RATE, PACKET_SIZE) \
 	(MBITPSEC_TO_BYTEPSEC((RATE)) / (PACKET_SIZE) / (BURSTS_PER_SEC))
 
-/* Headers: ETH+IP+UDP, 42 bytes */
-#if USE_MTU_PACKETS == 0
+/* Headers: ETH + IP + UDP, 42 bytes */
+#if (USE_MTU_PACKETS == 0)
 #define PACKET_TOTAL_SIZE (1356)
 #else
-#if USE_MTU_PACKETS == 1
 #define PACKET_TOTAL_SIZE (1514)
 #endif
-#endif
 
-#define EXACT_USER_PACKET_PER_BURST (PACKETS_PER_FRAME(USER_RATE_MBITPSEC, PACKET_TOTAL_SIZE))
-#define TOTAL_PACKET_PER_BURST (PACKETS_PER_FRAME(HCA_RATE_MBITPSEC, PACKET_TOTAL_SIZE))
+#define EXACT_USER_PACKET_PER_BURST \
+	PACKETS_PER_FRAME(USER_RATE_MBITPSEC, PACKET_TOTAL_SIZE)
+#define TOTAL_PACKET_PER_BURST \
+	PACKETS_PER_FRAME(HCA_RATE_MBITPSEC, PACKET_TOTAL_SIZE)
 #define DUMMY_RATIO ((TOTAL_PACKET_PER_BURST - EXACT_USER_PACKET_PER_BURST) / \
 		EXACT_USER_PACKET_PER_BURST)
-
-
-
 
 class pacing {
 public:
 	pacing() : m_counter_next_dummy(0.0) {};
-	int paced_sendto(int fd, const void *buf, size_t nbytes, int flags, const struct sockaddr *to, socklen_t tolen);
+
+	int paced_sendto(int fd, const void *buf, size_t nbytes, int flags,
+		const struct sockaddr *to, socklen_t tolen);
 private:
 	float m_counter_next_dummy;
 };
-#endif // PACING_H
+#endif // _PACING_H_
+
