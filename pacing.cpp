@@ -24,3 +24,8 @@ int pacing::paced_sendto(int fd, const void *buf, size_t nbytes, int flags,
 	return ret;
 }
 
+pacing *pacing_factory(void)
+{
+	return new pacing();
+}
+

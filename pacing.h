@@ -42,5 +42,8 @@ public:
 private:
 	float m_counter_next_dummy;
 };
-#endif // _PACING_H_
+
+pacing *pacing_factory(void);
+
+#endif // PACING_H
 

@@ -12,6 +12,7 @@
 #include <math.h>
 #include <chrono>
 #include <time.h>
+#include <dlfcn.h>
 #include "pacing.h"
 
 #define LOCAL_IP ("4.4.0.1")
@@ -119,7 +120,12 @@ static int run(int sockfd, struct sockaddr *sa, socklen_t salen)
 	std::chrono::microseconds resolution(USEC_RESOLUTION);
 
 #if USE_PACING_LIB
-	pacing p;
+	void *handle = dlopen("libpacing.so", RTLD_NOW | RTLD_GLOBAL);
+
+	pacing_factory *pf;
+	void *so_p = dlsym(handle, "pf");
+	dlclose(handle);
+	pacing *p = static_cast<pacing*()>(so_p)();
 #endif
 
 	/*malloc buffer and set with '0-9'-s*/
@@ -232,6 +238,10 @@ int main(int argc, char *argv[]) {
 	ret = 0;
 
 Exit:
+
+#if USE_PACING_LIB
+	delete p;
+#endif
 	free(sa);
 	if (-1 < sockfd)
 		close(sockfd);
