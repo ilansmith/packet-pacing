@@ -3,11 +3,11 @@ LFLAGS=-lstdc++ -fPIC -L.
 APPS=udp_client
 OBJS_UDP_CLIENT=udp_client.o
 
-ifeq ($(DEBUG),y)
+ifeq ($(with-debug),y)
 CFLAGS+=-g
 endif
 
-ifeq ($(PACING_LIB),y)
+ifeq ($(with-libpacing),y)
 	CFLAGS+=-DUSE_PACING_LIB
 	OBJS_UDP_CLIENT+=libpacing.a
 	LFLAGS+=-lpacing
