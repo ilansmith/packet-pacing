@@ -12,7 +12,10 @@
 #include <math.h>
 #include <chrono>
 #include <time.h>
+
+#ifdef USE_PACING_LIB
 #include "pacing.h"
+#endif
 
 #define LOCAL_IP ("4.4.0.1")
 #define OUT_PORT_LOCAL ("20654")
@@ -25,7 +28,6 @@
 
 #define USE_MTU_PACKETS (0)
 #define USE_DUMMY (1)
-#define USE_PACING_LIB (1)
 
 #define NUM_LOOPS (100000000L)
 #define DUMMY_SPOOF_MAC (0x44000000)
@@ -48,10 +50,13 @@
 
 #define PAYLOAD_SIZE (PACKET_TOTAL_SIZE - 42 /*Headers: ETH+IP+UDP*/)
 #define MAX_PACING_RATE (MBITPSEC_TO_BYTEPSEC(HCA_RATE_MBITPSEC) / PACKETS_PER_BURST)
+
+#ifndef USE_PACING_LIB 
 #define EXACT_USER_PACKET_PER_BURST (PACKETS_PER_FRAME(USER_RATE_MBITPSEC, PACKET_TOTAL_SIZE))
 #define TOTAL_PACKET_PER_BURST (PACKETS_PER_FRAME(HCA_RATE_MBITPSEC, PACKET_TOTAL_SIZE))
 #define DUMMY_RATIO ((TOTAL_PACKET_PER_BURST - EXACT_USER_PACKET_PER_BURST) / \
 		EXACT_USER_PACKET_PER_BURST)
+#endif
 
 void error(const char *msg) {
 	perror(msg);
@@ -118,7 +123,7 @@ static int run(int sockfd, struct sockaddr *sa, socklen_t salen)
 	std::chrono::time_point<std::chrono::high_resolution_clock> end;
 	std::chrono::microseconds resolution(USEC_RESOLUTION);
 
-#if USE_PACING_LIB
+#ifdef USE_PACING_LIB
 	pacing p;
 #endif
 
@@ -138,7 +143,7 @@ static int run(int sockfd, struct sockaddr *sa, socklen_t salen)
 		for (uint32_t j = floor(i * EXACT_USER_PACKET_PER_BURST);
 						j < next_stop_send;
 						++j) {
-#if USE_PACING_LIB
+#ifdef USE_PACING_LIB
 			if (p.paced_sendto(sockfd, buffer, PAYLOAD_SIZE, 0, sa, salen) < 0) {
 				/* buffers aren't available locally at the moment */
 				if (errno == ENOBUFS) {

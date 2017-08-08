@@ -6,8 +6,12 @@ ifeq ($(DEBUG),y)
 CFLAGS+=-g
 endif
 
+ifeq ($(PACING_LIB),y)
+	CFLAGS+=-DUSE_PACING_LIB
+endif
+
 %.o: %.cpp
-	g++ $(CFLAGS) -c $<
+	g++ $(CFLAGS) -c $^
 
 lib%.a: %.o
 	ar -r $@ $^
