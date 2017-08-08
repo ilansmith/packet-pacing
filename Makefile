@@ -1,6 +1,6 @@
 CFLAGS=-std=c++0x -fPIC
-LFLAGS=-lstdc++ -fPIC
-APPS=libpacing.so udp_client
+LFLAGS=-lstdc++ -fPIC -L.
+APPS=udp_client
 
 ifeq ($(DEBUG),y)
 CFLAGS+=-g
@@ -9,17 +9,17 @@ endif
 %.o: %.cpp
 	g++ $(CFLAGS) -c $<
 
+lib%.a: %.o
+	ar -r $@ $^
+
 all:$(APPS)
 
-udp_client: udp_client.o libpacing.so 
-	g++ $(LFLAGS) -L. -lpacing  -o $@ $<
-
-libpacing.so: pacing.o
-	g++ -shared -o $@ $< -lm	
+udp_client: udp_client.o libpacing.a 
+	g++ -o $@ $(LFLAGS) -lpacing $^
 
 clean:
 	rm -rf *.o
 
 cleanall: clean
-	rm -rf tags $(APPS)
+	rm -rf tags *.a $(APPS)
 
